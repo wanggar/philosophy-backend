@@ -17,6 +17,17 @@ export type ClashScale = {
   userPosition: number
 }
 
+export type LedgerPath = "go" | "stay"
+export type LedgerRow = "short" | "long"
+export type LedgerColumn = "gain" | "lose"
+
+export type LedgerEntry = {
+  path: LedgerPath
+  row: LedgerRow
+  column: LedgerColumn
+  items: string[]
+}
+
 export type ChatHistoryMessage = {
   role: "user" | "assistant"
   content: string
@@ -41,4 +52,5 @@ export type ChatResponse = {
   nextStage: Stage | null
   fogUpdates: FogScrap[] | null
   clashUpdates: ClashScale[] | null
+  ledgerUpdates: LedgerEntry[] | null
 }

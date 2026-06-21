@@ -44,6 +44,20 @@ const responseSchema = z.object({
     .nullable()
     .default(null)
     .describe("Value clash scales to surface. Only populate during clash stage. Omit or null otherwise."),
+  ledgerUpdates: z
+    .array(
+      z.object({
+        path: z.enum(["go", "stay"]).describe("Which path this entry belongs to."),
+        row: z.enum(["short", "long"]).describe("Time horizon: short-term or long-term."),
+        column: z.enum(["gain", "lose"]).describe("Whether these items are gains or losses."),
+        items: z
+          .array(z.string())
+          .describe("1-3 short phrases for this cell, e.g. 'a clean slate', 'sunday lunch'."),
+      })
+    )
+    .nullable()
+    .default(null)
+    .describe("Ledger cells (gains/losses per path & horizon). Only populate during ledger stage. Omit or null otherwise."),
 })
 
 export async function POST(req: Request) {
