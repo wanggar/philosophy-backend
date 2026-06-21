@@ -1,8 +1,10 @@
-import { openai } from "@ai-sdk/openai"
-import { generateObject } from "ai"
+import OpenAI from "openai"
+import { zodTextFormat } from "openai/helpers/zod"
 import { z } from "zod"
 import { buildSystemPrompt } from "@/lib/prompts"
 import type { ChatRequest, ChatResponse } from "@/lib/types"
+
+const client = new OpenAI()
 
 // Zod schema — enforces structured output from the LLM.
 // Must stay in sync with ChatResponse in lib/types.ts and AgentResponse on iOS.
@@ -21,8 +23,7 @@ const responseSchema = z.object({
       })
     )
     .nullable()
-    .default(null)
-    .describe("New fog scraps to add. Only populate during fog stage. Omit or null otherwise."),
+    .describe("New fog scraps to add. Only populate during fog stage. Null otherwise."),
   clashUpdates: z
     .array(
       z.object({
@@ -42,8 +43,7 @@ const responseSchema = z.object({
       })
     )
     .nullable()
-    .default(null)
-    .describe("Value clash scales to surface. Only populate during clash stage. Omit or null otherwise."),
+    .describe("Value clash scales to surface. Only populate during clash stage. Null otherwise."),
   ledgerUpdates: z
     .array(
       z.object({
@@ -56,26 +56,29 @@ const responseSchema = z.object({
       })
     )
     .nullable()
-    .default(null)
-    .describe("Ledger cells (gains/losses per path & horizon). Only populate during ledger stage. Omit or null otherwise."),
+    .describe("Ledger cells (gains/losses per path & horizon). Only populate during ledger stage. Null otherwise."),
 })
 
 export async function POST(req: Request) {
   try {
     const body: ChatRequest = await req.json()
 
-    const { object } = await generateObject({
-      model: openai(process.env.OPENAI_MODEL ?? "gpt-4o-mini"),
-      schema: responseSchema,
-      messages: [
+    const response = await client.responses.create({
+      model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+      input: [
         { role: "system", content: buildSystemPrompt(body) },
         ...body.history,
         { role: "user", content: body.message },
       ],
+      text: {
+        format: zodTextFormat(responseSchema, "chat_response"),
+      },
     })
 
-    const response: ChatResponse = object
-    return Response.json(response)
+    const parsed: ChatResponse = responseSchema.parse(
+      JSON.parse(response.output_text)
+    )
+    return Response.json(parsed)
   } catch (err) {
     console.error("[/api/v1/chat] Error:", err)
     return Response.json(
