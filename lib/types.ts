@@ -49,6 +49,7 @@ export type ChatRequest = {
 // Response decoded by iOS LiveAPIService into AgentResponse
 export type ChatResponse = {
   aiMessage: string
+  sessionTitle: string | null
   nextStage: Stage | null
   fogUpdates: FogScrap[] | null
   clashUpdates: ClashScale[] | null

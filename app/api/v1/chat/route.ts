@@ -10,6 +10,12 @@ const client = new OpenAI()
 // Must stay in sync with ChatResponse in lib/types.ts and AgentResponse on iOS.
 const responseSchema = z.object({
   aiMessage: z.string().describe("The AI companion's reply. Warm, direct, max 3 sentences."),
+  sessionTitle: z
+    .string()
+    .nullable()
+    .describe(
+      "Short conversation title (3–6 words) once the dilemma is clearly named. Null until then."
+    ),
   nextStage: z
     .enum(["initial", "fog", "ledger", "clash", "review"])
     .nullable()
