@@ -14,7 +14,7 @@ const responseSchema = z.object({
     .string()
     .nullable()
     .describe(
-      "Short conversation title (3–6 words) once the dilemma is clearly named. Null until then."
+      "Short conversation title (3–6 words). Always set on the first user message. Update later only if the dilemma becomes clearer and the user hasn't renamed it."
     ),
   nextStage: z
     .enum(["initial", "fog", "ledger", "clash", "review"])
@@ -23,7 +23,10 @@ const responseSchema = z.object({
   fogUpdates: z
     .array(
       z.object({
-        text: z.string().describe("Short emotionally honest phrase, 2-5 words."),
+        text: z
+          .string()
+          .max(36)
+          .describe("Unique emotionally honest phrase, 2–5 words, max 36 characters. Never duplicate existing scraps."),
         isItalic: z.boolean().describe("True for reflective/internal phrases, false for factual ones."),
         size: z.number().min(12).max(28).describe("Visual weight: 12=quiet, 28=loud."),
       })
