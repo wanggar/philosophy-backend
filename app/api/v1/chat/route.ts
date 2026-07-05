@@ -9,7 +9,7 @@ const client = new OpenAI()
 // Zod schema — enforces structured output from the LLM.
 // Must stay in sync with ChatResponse in lib/types.ts and AgentResponse on iOS.
 const responseSchema = z.object({
-  aiMessage: z.string().describe("The AI companion's reply. Warm, direct, max 3 sentences."),
+  aiMessage: z.string().describe("The AI companion's reply. Warm, direct, max 3 sentences. Must end with a question."),
   sessionTitle: z
     .string()
     .nullable()
@@ -94,7 +94,7 @@ const responseSchema = z.object({
         items: z
           .array(z.string())
           .describe(
-            "1–3 NEW unique phrases for this cell only. No duplicates within the cell. Do not repeat items already in the ledger."
+            "2–4 NEW grouped items for this cell. Use umbrella + parentheses for related subpoints, e.g. 'intellectual depth (classics, conferences)'. Unique within the cell AND across all cells for this path."
           ),
       })
     )
