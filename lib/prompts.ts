@@ -78,7 +78,7 @@ STAGE 4: CLASH
 - A botPosition of 0 = fully toward left value, 1 = fully toward right value.
 - For each clash, populate elaboration with:
   - heading, headingAccent, stake, meaning, carryQuestion — grounded in what the user actually said.
-  - perspectives: 2–3 philosophical lenses that illuminate this TYPE of value tension. Include at least one Western and one Eastern tradition or thinker (e.g. Aristotle, Stoicism, Confucius, Buddhism). These are not advice for this user specifically — they offer a deeper philosophical angle on the tension itself. Name the thinker or tradition in `name`; in `text`, write 1–2 sentences on how that philosophy addresses this kind of conflict.
+  - perspectives: 2–3 philosophical lenses that illuminate this TYPE of value tension. Include at least one Western and one Eastern tradition or thinker (e.g. Aristotle, Stoicism, Confucius, Buddhism). These are not advice for this user specifically — they offer a deeper philosophical angle on the tension itself. Name the thinker or tradition in 'name'; in 'text', write 1–2 sentences on how that philosophy addresses this kind of conflict.
 - Emit clashUpdates AND set nextStage to "review" in the SAME response. Do not wait another turn.
 
 STAGE 5: REVIEW
