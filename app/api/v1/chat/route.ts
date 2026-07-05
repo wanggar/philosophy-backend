@@ -46,6 +46,27 @@ const responseSchema = z.object({
           .min(0)
           .max(1)
           .describe("Start same as botPosition — user will adjust on device."),
+        elaboration: z
+          .object({
+            heading: z.string().describe("First line of the clash framing, grounded in this conversation."),
+            headingAccent: z.string().describe("Second line in contrasting voice, grounded in this conversation."),
+            stake: z.string().describe("What's at stake between these two values for THIS user."),
+            meaning: z
+              .string()
+              .describe("What the user's current lean means — reference their situation, not generic philosophy."),
+            carryQuestion: z.string().describe("One question for the user to sit with, specific to their dilemma."),
+            perspectives: z
+              .array(
+                z.object({
+                  name: z.string().describe("Short lens label e.g. 'What you said', 'The fear underneath'."),
+                  text: z.string().describe("1-2 sentences grounded in the user's words, not famous philosophers."),
+                })
+              )
+              .min(2)
+              .max(3),
+          })
+          .nullable()
+          .describe("Elaboration content for the clash detail view. Populate when emitting clashUpdates."),
       })
     )
     .nullable()
@@ -63,6 +84,13 @@ const responseSchema = z.object({
     )
     .nullable()
     .describe("Ledger cells (gains/losses per path & horizon). Only populate during ledger stage. Null otherwise."),
+  ledgerPathLabels: z
+    .object({
+      go: z.string().describe("Human-readable label for the first path, e.g. 'If you take the job offer'."),
+      stay: z.string().describe("Human-readable label for the second path, e.g. 'If you stay where you are'."),
+    })
+    .nullable()
+    .describe("Labels for the two ledger paths. Populate when emitting ledgerUpdates."),
 })
 
 export async function POST(req: Request) {

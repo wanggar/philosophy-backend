@@ -9,12 +9,27 @@ export type FogScrap = {
   size: number
 }
 
+export type ClashPerspective = {
+  name: string
+  text: string
+}
+
+export type ClashElaboration = {
+  heading: string
+  headingAccent: string
+  stake: string
+  meaning: string
+  carryQuestion: string
+  perspectives: ClashPerspective[]
+}
+
 export type ClashScale = {
   id: string
   left: string
   right: string
   botPosition: number
   userPosition: number
+  elaboration?: ClashElaboration | null
 }
 
 export type LedgerPath = "go" | "stay"
@@ -54,4 +69,5 @@ export type ChatResponse = {
   fogUpdates: FogScrap[] | null
   clashUpdates: ClashScale[] | null
   ledgerUpdates: LedgerEntry[] | null
+  ledgerPathLabels: { go: string; stay: string } | null
 }
