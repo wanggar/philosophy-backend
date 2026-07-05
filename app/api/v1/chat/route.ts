@@ -93,11 +93,15 @@ const responseSchema = z.object({
         column: z.enum(["gain", "lose"]).describe("Whether these items are gains or losses."),
         items: z
           .array(z.string())
-          .describe("1-3 short phrases for this cell, e.g. 'a clean slate', 'sunday lunch'."),
+          .describe(
+            "1–3 NEW unique phrases for this cell only. No duplicates within the cell. Do not repeat items already in the ledger."
+          ),
       })
     )
     .nullable()
-    .describe("Ledger cells (gains/losses per path & horizon). Only populate during ledger stage. Null otherwise."),
+    .describe(
+      "Ledger cells (gains/losses per path & horizon). Only NEW unique items per cell. Only populate during ledger stage. Null otherwise."
+    ),
   ledgerPathLabels: z
     .object({
       go: z.string().describe("Specific label for path A from the user's dilemma, e.g. 'If you choose Brown'."),
