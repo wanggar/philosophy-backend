@@ -9,7 +9,11 @@ const client = new OpenAI()
 // Zod schema — enforces structured output from the LLM.
 // Must stay in sync with ChatResponse in lib/types.ts and AgentResponse on iOS.
 const responseSchema = z.object({
-  aiMessage: z.string().describe("The AI companion's reply. Warm, direct, max 3 sentences. Must end with a question."),
+  aiMessage: z
+    .string()
+    .describe(
+      "The AI companion's reply. Warm, direct, max 4 sentences. Must end with a question. If nextStage is set, the FIRST sentence MUST orient the user to the new tool (fog, ledger, clash, or Review)."
+    ),
   sessionTitle: z
     .string()
     .nullable()
@@ -19,7 +23,9 @@ const responseSchema = z.object({
   nextStage: z
     .enum(["initial", "fog", "ledger", "clash", "review"])
     .nullable()
-    .describe("Advance to this stage, or null to stay in the current stage."),
+    .describe(
+      "Advance to this stage, or null to stay. When set, aiMessage MUST begin with one orienting sentence about the new tool."
+    ),
   fogUpdates: z
     .array(
       z.object({
