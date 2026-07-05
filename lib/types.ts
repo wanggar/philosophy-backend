@@ -36,11 +36,23 @@ export type LedgerPath = "go" | "stay"
 export type LedgerRow = "short" | "long"
 export type LedgerColumn = "gain" | "lose"
 
+export type LedgerItem = {
+  label: string
+  details: string[]
+}
+
+export type LedgerCell = {
+  path: LedgerPath
+  row: LedgerRow
+  column: LedgerColumn
+  items: LedgerItem[]
+}
+
 export type LedgerEntry = {
   path: LedgerPath
   row: LedgerRow
   column: LedgerColumn
-  items: string[]
+  items: LedgerItem[]
 }
 
 export type ChatHistoryMessage = {
@@ -51,6 +63,7 @@ export type ChatHistoryMessage = {
 export type Artifacts = {
   fog: FogScrap[]
   clashScales: ClashScale[]
+  ledger: LedgerCell[]
 }
 
 // Request body sent by the iOS app on every chat turn

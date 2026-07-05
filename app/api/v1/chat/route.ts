@@ -98,15 +98,27 @@ const responseSchema = z.object({
         row: z.enum(["short", "long"]).describe("Time horizon: short-term or long-term."),
         column: z.enum(["gain", "lose"]).describe("Whether these items are gains or losses."),
         items: z
-          .array(z.string())
+          .array(
+            z.object({
+              label: z
+                .string()
+                .max(60)
+                .describe("Umbrella theme for this gain/loss, e.g. 'Rich intellectual heritage'."),
+              details: z
+                .array(z.string().max(40))
+                .max(5)
+                .describe("Specific subpoints grouped under the label, e.g. ['classics', 'conferences']."),
+            })
+          )
+          .max(3)
           .describe(
-            "2–4 NEW grouped items for this cell. Use umbrella + parentheses for related subpoints, e.g. 'intellectual depth (classics, conferences)'. Unique within the cell AND across all cells for this path."
+            "Full consolidated list for this cell (REPLACES previous). Max 3 structured items. Merge related ideas into one label with details."
           ),
       })
     )
     .nullable()
     .describe(
-      "Ledger cells (gains/losses per path & horizon). Only NEW unique items per cell. Only populate during ledger stage. Null otherwise."
+      "Ledger cell updates during ledger stage only. Each entry REPLACES that cell. Send only cells that changed. Omit unchanged cells."
     ),
   ledgerPathLabels: z
     .object({

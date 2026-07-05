@@ -1,10 +1,30 @@
-import type { ChatRequest } from "./types"
+import type { ChatRequest, LedgerCell, LedgerItem } from "./types"
+
+function formatLedgerItem(item: LedgerItem): string {
+  if (!item.details.length) return item.label
+  return `${item.label} (${item.details.join(", ")})`
+}
+
+function formatLedger(cells: LedgerCell[]): string {
+  if (!cells.length) return "none yet"
+  return cells
+    .map(
+      (cell) =>
+        `${cell.path}/${cell.row}/${cell.column}: ${
+          cell.items.length
+            ? cell.items.map(formatLedgerItem).join("; ")
+            : "(empty)"
+        }`
+    )
+    .join("\n")
+}
 
 export function buildSystemPrompt(req: ChatRequest): string {
   const fogList = req.artifacts.fog.map((s) => `"${s.text}"`).join(", ")
   const clashList = req.artifacts.clashScales
     .map((s) => `${s.left} ↔ ${s.right}`)
     .join(", ")
+  const ledgerList = formatLedger(req.artifacts.ledger ?? [])
 
   return `
 
@@ -14,6 +34,8 @@ CURRENT SESSION STAGE: ${req.stage}
 
 WHAT YOU'VE CAPTURED SO FAR:
 Fog scraps (emotional patterns): ${fogList || "none yet"}
+Ledger cells: 
+${ledgerList}
 Value clashes: ${clashList || "none yet"}
 
 HOW TO BEHAVE AT EACH STAGE:
@@ -71,29 +93,34 @@ STAGE 3: LEDGER
 
 1. Use multiple turns to help the user think through what they may gain and lose in each path — short-term and long-term. Ask questions to guide users to think more deeply and comprehensively about each path.
 
-2. Populate ledgerUpdates with the gains and losses you hear, organised by path (options in the dilemma), row ("short"/"long"), and column ("gain"/"lose").
+2. Populate ledgerUpdates with structured items: each item has a label (umbrella theme) and details (subpoints array). Each ledgerUpdates entry REPLACES that cell entirely — send the full consolidated list for each cell you touch, not incremental additions.
 
-3. LEDGER UNIQUENESS RULES (strict):
-  - Send ONLY new items not already in the ledger. Do not re-emit items from previous turns.
-  - Within each cell (path + row + column), every item must be unique — no duplicates or near-duplicates in the same box.
-  - Each theme must appear in exactly ONE cell per path. Never put the same or near-same item in multiple cells for the same path (e.g. do not put "tied down to one thing" in both short-term lose AND long-term lose for Princeton — pick the horizon that fits best).
-  - If nothing new was heard this turn → send an empty items array for that cell, or omit that cell entirely.
-  - Prefer 2–4 grouped items per cell per turn, not a long flat list.
+3. LEDGER UPDATE MODEL (strict):
+  - REPLACE, do not append: when you update a cell, send the complete current list for that cell (max 3 items).
+  - Merge new user input into existing umbrella labels from CURRENT LEDGER above — add to details[] rather than creating a new label when ideas belong together.
+  - Only include cells that changed this turn; omit unchanged cells.
+  - If nothing changed for a cell, do not send that cell.
 
-4. LEDGER ORGANIZATION (strict):
-  - Group related ideas under one umbrella with details in parentheses, e.g. "rich intellectual heritage (classics, philosophy, conferences, departmental life)".
-  - Do not scatter sibling ideas as separate top-level items when they belong together.
-  - Keep each item scannable — one line with optional parenthetical subpoints, not many tiny fragments.
+4. LEDGER UNIQUENESS RULES (strict):
+  - Max 3 items per cell. Each label must be unique within the cell and across all cells for the same path.
+  - Each theme appears in exactly ONE cell per path — never duplicate a label across short/long or gain/lose for the same option.
+  - Pick the single best horizon (short OR long) when a theme could fit both.
 
-5. ALWAYS populate ledgerPathLabels on every ledger turn with specific names drawn from the user's dilemma (e.g. go: "If you choose Brown", stay: "If you choose Cornell"). Never leave generic "go/stay" labels — use the actual options the user is weighing.
+5. LEDGER ORGANIZATION (strict):
+  - Use label for the umbrella theme and details for specifics.
+  - Good: label "Rich intellectual heritage", details ["classics", "philosophy", "conferences"]
+  - Bad: separate labels "classics", "philosophy courses", "conferences" in the same cell.
+  - Keep labels under ~8 words; details are short phrases from user input.
 
-6. The content in the ledger artifact should be based on USER INPUT, not your own interpretation/conjecture/assumption. You can summarize or elevate details into a more abstract, concise phrase, but NEVER make up anything yourself.
+6. ALWAYS populate ledgerPathLabels on every ledger turn with specific names drawn from the user's dilemma (e.g. go: "If you choose Brown", stay: "If you choose Cornell"). Never leave generic "go/stay" labels — use the actual options the user is weighing.
 
-7. During ledger, populate ledgerUpdates every turn to quietly update the Ledger panel (near the input bar). Keep aiMessage conversational — do not list gain/loss items and do not say "here's your ledger." Do not mention the ledger panel on routine ledger turns EXCEPT in the one response where you set nextStage to "clash" (see transition rule below).
+7. The content in the ledger artifact should be based on USER INPUT, not your own interpretation/conjecture/assumption. You can summarize or elevate details into a more abstract, concise phrase, but NEVER make up anything yourself.
 
-8. When the user is clear on the gains and losses, move forward to "clash" stage.
+8. During ledger, populate ledgerUpdates every turn to quietly update the Ledger panel (near the input bar). Keep aiMessage conversational — do not list gain/loss items and do not say "here's your ledger." Do not mention the ledger panel on routine ledger turns EXCEPT in the one response where you set nextStage to "clash" (see transition rule below).
 
-9. TRANSITION (ledger→clash, required): In the response where you set nextStage to "clash", the FIRST sentence of aiMessage MUST orient the user to the clash — one brief sentence that you'll surface the value tensions and they can tap "The clash" below to explore. Then continue with a question. Example: "When you're ready, the clash will name the values pulling you apart — tap it below anytime. [question]"
+9. When the user is clear on the gains and losses, move forward to "clash" stage.
+
+10. TRANSITION (ledger→clash, required): In the response where you set nextStage to "clash", the FIRST sentence of aiMessage MUST orient the user to the clash — one brief sentence that you'll surface the value tensions and they can tap "The clash" below to explore. Then continue with a question. Example: "When you're ready, the clash will name the values pulling you apart — tap it below anytime. [question]"
 
 STAGE 4: CLASH
 
