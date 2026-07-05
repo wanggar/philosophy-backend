@@ -36,9 +36,9 @@ const responseSchema = z.object({
   clashUpdates: z
     .array(
       z.object({
-        id: z.string().describe("Short snake_case identifier e.g. loyalty, belonging, comfort."),
-        left: z.string().describe("Left pole of the value tension e.g. Loyalty."),
-        right: z.string().describe("Right pole of the value tension e.g. Becoming."),
+        id: z.string().describe("Short snake_case identifier e.g. loyalty, belonging, comfort. Must be unique across all clashes."),
+        left: z.string().describe("Left pole of the value tension e.g. Loyalty. Must differ from all other clashes."),
+        right: z.string().describe("Right pole of the value tension e.g. Becoming. Must differ from all other clashes."),
         botPosition: z
           .number()
           .min(0)
@@ -61,19 +61,30 @@ const responseSchema = z.object({
             perspectives: z
               .array(
                 z.object({
-                  name: z.string().describe("Short lens label e.g. 'What you said', 'The fear underneath'."),
-                  text: z.string().describe("1-2 sentences grounded in the user's words, not famous philosophers."),
+                  name: z
+                    .string()
+                    .describe(
+                      "Philosopher or tradition name e.g. 'Aristotle', 'Confucius', 'Stoicism', 'Buddhism'."
+                    ),
+                  text: z
+                    .string()
+                    .describe(
+                      "1–2 sentences on how this philosophical lens illuminates this type of value tension in general — not personalized advice for this user."
+                    ),
                 })
               )
               .min(2)
-              .max(3),
+              .max(3)
+              .describe(
+                "2–3 philosophical lenses. Include at least one Western and one Eastern thinker or tradition."
+              ),
           })
           .nullable()
           .describe("Elaboration content for the clash detail view. Populate when emitting clashUpdates."),
       })
     )
     .nullable()
-    .describe("Value clash scales to surface. Only populate during clash stage. Null otherwise."),
+    .describe("2–3 DISTINCT value clash scales. No duplicate or near-duplicate poles. Only populate during clash stage. Null otherwise."),
   ledgerUpdates: z
     .array(
       z.object({
@@ -89,11 +100,11 @@ const responseSchema = z.object({
     .describe("Ledger cells (gains/losses per path & horizon). Only populate during ledger stage. Null otherwise."),
   ledgerPathLabels: z
     .object({
-      go: z.string().describe("Human-readable label for the first path, e.g. 'If you take the job offer'."),
-      stay: z.string().describe("Human-readable label for the second path, e.g. 'If you stay where you are'."),
+      go: z.string().describe("Specific label for path A from the user's dilemma, e.g. 'If you choose Brown'."),
+      stay: z.string().describe("Specific label for path B from the user's dilemma, e.g. 'If you choose Cornell'."),
     })
     .nullable()
-    .describe("Labels for the two ledger paths. Populate when emitting ledgerUpdates."),
+    .describe("Labels for the two ledger paths. Required on every ledger turn — use the user's actual options, never generic go/stay."),
 })
 
 export async function POST(req: Request) {
