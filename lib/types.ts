@@ -12,6 +12,7 @@ export type FogScrap = {
 export type ClashPerspective = {
   name: string
   text: string
+  application: string
 }
 
 export type ClashElaboration = {

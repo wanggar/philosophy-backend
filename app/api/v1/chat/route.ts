@@ -75,7 +75,12 @@ const responseSchema = z.object({
                   text: z
                     .string()
                     .describe(
-                      "1–2 sentences on how this philosophical lens illuminates this type of value tension in general — not personalized advice for this user."
+                      "1–2 sentences (doctrine): how this philosophical lens illuminates this type of value tension in general — not personalized advice."
+                    ),
+                  application: z
+                    .string()
+                    .describe(
+                      "1–2 sentences: what this thinker/tradition would notice or ask about THIS user's situation. Reference their dilemma. Illuminate, never tell them what to choose."
                     ),
                 })
               )
