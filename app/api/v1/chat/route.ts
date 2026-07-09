@@ -12,7 +12,7 @@ const responseSchema = z.object({
   aiMessage: z
     .string()
     .describe(
-      "The AI companion's reply. Warm, direct, max 4 sentences. Must end with a question. If nextStage is set, the FIRST sentence MUST orient the user to the new tool (fog, ledger, clash, or Review)."
+      "The AI companion's reply. Warm, direct, max 4 sentences. Usually ends with a question. If nextStage is set: acknowledge the user first, ask a deepening question (or soft close on review), THEN end with one soft aside about the new tool — never lead with the tool."
     ),
   sessionTitle: z
     .string()
@@ -24,7 +24,7 @@ const responseSchema = z.object({
     .enum(["initial", "fog", "ledger", "clash", "review"])
     .nullable()
     .describe(
-      "Advance to this stage, or null to stay. When set, aiMessage MUST begin with one orienting sentence about the new tool."
+      "Advance to this stage, or null to stay. When set, aiMessage must acknowledge + question first, then a soft tool aside last — not tool-first."
     ),
   fogUpdates: z
     .array(
