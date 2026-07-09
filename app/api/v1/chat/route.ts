@@ -38,7 +38,9 @@ const responseSchema = z.object({
       })
     )
     .nullable()
-    .describe("New fog scraps to add. Only populate during fog stage. Null otherwise."),
+    .describe(
+      "New fog scraps to add. During fog stage and on initial→fog transition, populate with ≥1 verbatim scrap when introducing the fog. Null otherwise."
+    ),
   clashUpdates: z
     .array(
       z.object({
@@ -95,7 +97,9 @@ const responseSchema = z.object({
       })
     )
     .nullable()
-    .describe("2–3 DISTINCT value clash scales. No duplicate or near-duplicate poles. Only populate during clash stage. Null otherwise."),
+    .describe(
+      "2–3 DISTINCT value clash scales. On ledger→clash transition, include ≥1 clash so the panel is not empty. Stay at clash — do not jump to review in that same response. Null outside clash stage."
+    ),
   ledgerUpdates: z
     .array(
       z.object({
@@ -108,22 +112,24 @@ const responseSchema = z.object({
               label: z
                 .string()
                 .max(60)
-                .describe("Umbrella theme for this gain/loss, e.g. 'Rich intellectual heritage'."),
+                .describe("Umbrella theme / assertion, e.g. 'academic excitement'."),
               details: z
                 .array(z.string().max(40))
                 .max(5)
-                .describe("Specific subpoints grouped under the label, e.g. ['classics', 'conferences']."),
+                .describe(
+                  "Concrete supporting evidence under the label, e.g. ['better classics', 'more courses', 'clubs']. Must ADD information — never restate the label. Use [] if no concrete supports yet."
+                ),
             })
           )
           .max(3)
           .describe(
-            "Full consolidated list for this cell (REPLACES previous). Max 3 structured items. Merge related ideas into one label with details."
+            "Full consolidated list for this cell (REPLACES previous). Max 3 structured items. Merge related ideas into one label with supporting details."
           ),
       })
     )
     .nullable()
     .describe(
-      "Ledger cell updates during ledger stage only. Each entry REPLACES that cell. Send only cells that changed. Omit unchanged cells."
+      "Ledger cell updates during ledger stage. On fog→ledger transition, include ≥1 grounded cell so the panel is not empty. Each entry REPLACES that cell. Send only cells that changed."
     ),
   ledgerPathLabels: z
     .object({
