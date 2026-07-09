@@ -75,6 +75,12 @@ export type ChatRequest = {
   artifacts: Artifacts
 }
 
+export type ResearchLink = {
+  title: string
+  url: string
+  note: string
+}
+
 // Response decoded by iOS LiveAPIService into AgentResponse
 export type ChatResponse = {
   aiMessage: string
@@ -84,4 +90,5 @@ export type ChatResponse = {
   clashUpdates: ClashScale[] | null
   ledgerUpdates: LedgerEntry[] | null
   ledgerPathLabels: { go: string; stay: string } | null
+  researchLinks: ResearchLink[] | null
 }

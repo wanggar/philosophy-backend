@@ -2,7 +2,13 @@ import OpenAI from "openai"
 import { zodTextFormat } from "openai/helpers/zod"
 import { z } from "zod"
 import { buildSystemPrompt } from "@/lib/prompts"
-import type { ChatRequest, ChatResponse } from "@/lib/types"
+import {
+  buildSearchQuery,
+  formatResearchForPrompt,
+  gatherResearchLinks,
+  isExplicitSearchRequest,
+} from "@/lib/research"
+import type { ChatRequest, ChatResponse, ResearchLink } from "@/lib/types"
 
 const client = new OpenAI()
 
@@ -12,7 +18,7 @@ const responseSchema = z.object({
   aiMessage: z
     .string()
     .describe(
-      "The AI companion's reply. Warm, direct, max 4 sentences. Usually ends with a question. If nextStage is set: acknowledge the user first, ask a deepening question (or soft close on review), THEN end with one soft aside about the new tool — never lead with the tool."
+      "The AI companion's reply. Warm, direct, max 4 sentences. Usually ends with a question. If nextStage is set: acknowledge the user first, ask a deepening question (or soft close on review), THEN end with one soft aside about the new tool — never lead with the tool. When researchLinks are present, do not paste URLs; ask what resonates."
     ),
   sessionTitle: z
     .string()
@@ -117,7 +123,7 @@ const responseSchema = z.object({
                 .array(z.string().max(40))
                 .max(5)
                 .describe(
-                  "Concrete supporting evidence under the label, e.g. ['better classics', 'more courses', 'clubs']. Must ADD information — never restate the label. Use [] if no concrete supports yet."
+                  "Concrete supporting evidence from USER input only, e.g. ['better classics', 'more courses']. Never copy web-search claims into details. Use [] if no concrete supports yet."
                 ),
             })
           )
@@ -129,7 +135,7 @@ const responseSchema = z.object({
     )
     .nullable()
     .describe(
-      "Ledger cell updates during ledger stage. On fog→ledger transition, include ≥1 grounded cell so the panel is not empty. Each entry REPLACES that cell. Send only cells that changed."
+      "Ledger cell updates during ledger stage. On fog→ledger transition, include ≥1 grounded cell so the panel is not empty. Each entry REPLACES that cell. Send only cells that changed. Details must come from the user, never from search results alone."
     ),
   ledgerPathLabels: z
     .object({
@@ -138,28 +144,105 @@ const responseSchema = z.object({
     })
     .nullable()
     .describe("Labels for the two ledger paths. Required on every ledger turn — use the user's actual options, never generic go/stay."),
+  researchLinks: z
+    .array(
+      z.object({
+        title: z.string().describe("Source title."),
+        url: z.string().describe("Full https URL from the live search — never invent."),
+        note: z.string().describe("One short line on what this source offers. Empty string if none."),
+      })
+    )
+    .max(4)
+    .nullable()
+    .describe(
+      "Echo the live research links provided in the prompt (same URLs). Null when no search ran. Never invent links."
+    ),
 })
+
+function ndjsonLine(obj: unknown): string {
+  return `${JSON.stringify(obj)}\n`
+}
+
+async function runChat(
+  body: ChatRequest,
+  researchLinks: ResearchLink[] | null
+): Promise<ChatResponse> {
+  const researchBlock =
+    researchLinks && researchLinks.length > 0
+      ? `\n\nLIVE RESEARCH RESULTS (share carefully; do not decide for the user; do not invent URLs; ask what resonates):\n${formatResearchForPrompt(researchLinks)}`
+      : researchLinks
+        ? `\n\nLIVE RESEARCH RESULTS: none found. Be honest; do not invent URLs.`
+        : ""
+
+  const response = await client.responses.create({
+    model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+    input: [
+      { role: "system", content: buildSystemPrompt(body) + researchBlock },
+      ...body.history,
+      { role: "user", content: body.message },
+    ],
+    text: {
+      format: zodTextFormat(responseSchema, "chat_response"),
+    },
+  })
+
+  const parsed = responseSchema.parse(JSON.parse(response.output_text)) as ChatResponse
+
+  // Always attach the real search results from the server — never trust the model to invent URLs.
+  if (researchLinks && researchLinks.length > 0) {
+    parsed.researchLinks = researchLinks
+  } else {
+    parsed.researchLinks = null
+  }
+
+  return parsed
+}
 
 export async function POST(req: Request) {
   try {
     const body: ChatRequest = await req.json()
+    const wantsStream = req.headers.get("accept")?.includes("application/x-ndjson")
 
-    const response = await client.responses.create({
-      model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
-      input: [
-        { role: "system", content: buildSystemPrompt(body) },
-        ...body.history,
-        { role: "user", content: body.message },
-      ],
-      text: {
-        format: zodTextFormat(responseSchema, "chat_response"),
+    const shouldSearch = isExplicitSearchRequest(body.message, body.history)
+
+    if (!wantsStream) {
+      let researchLinks: ResearchLink[] | null = null
+      if (shouldSearch) {
+        const query = buildSearchQuery(body.message, body.history)
+        researchLinks = await gatherResearchLinks(client, query)
+      }
+      const parsed = await runChat(body, researchLinks)
+      return Response.json(parsed)
+    }
+
+    const encoder = new TextEncoder()
+    const stream = new ReadableStream({
+      async start(controller) {
+        const send = (obj: unknown) => controller.enqueue(encoder.encode(ndjsonLine(obj)))
+        try {
+          let researchLinks: ResearchLink[] | null = null
+          if (shouldSearch) {
+            send({ type: "status", status: "searching" })
+            const query = buildSearchQuery(body.message, body.history)
+            researchLinks = await gatherResearchLinks(client, query)
+          }
+          const parsed = await runChat(body, researchLinks)
+          send({ type: "result", data: parsed })
+        } catch (err) {
+          console.error("[/api/v1/chat] stream error:", err)
+          send({ type: "error", error: "Something went wrong. Please try again." })
+        } finally {
+          controller.close()
+        }
       },
     })
 
-    const parsed: ChatResponse = responseSchema.parse(
-      JSON.parse(response.output_text)
-    )
-    return Response.json(parsed)
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "application/x-ndjson; charset=utf-8",
+        "Cache-Control": "no-cache",
+      },
+    })
   } catch (err) {
     console.error("[/api/v1/chat] Error:", err)
     return Response.json(
