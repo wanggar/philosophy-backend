@@ -2,6 +2,7 @@ import OpenAI from "openai"
 import { zodTextFormat } from "openai/helpers/zod"
 import { z } from "zod"
 import { buildSystemPrompt } from "@/lib/prompts"
+import { normalizeAiMessage } from "@/lib/normalizeMessage"
 import {
   buildSearchQuery,
   formatResearchForPrompt,
@@ -18,7 +19,7 @@ const responseSchema = z.object({
   aiMessage: z
     .string()
     .describe(
-      "The AI companion's reply. Warm, direct, max 4 sentences. Usually ends with a question. If nextStage is set: acknowledge the user first, ask a deepening question (or soft close on review), THEN end with one soft aside about the new tool — never lead with the tool. When researchLinks are present, do not paste URLs; ask what resonates."
+      "The AI companion's reply. Warm, direct, max 4 sentences. Use standard English punctuation and spacing (don't, I'll, What's — never dont/Ill/Whats or merged words like alreadylike). Usually ends with a question. If nextStage is set: acknowledge the user first, ask a deepening question (or soft close on review), THEN end with one soft aside about the new tool — never lead with the tool. When researchLinks are present, do not paste URLs; ask what resonates."
     ),
   sessionTitle: z
     .string()
@@ -187,6 +188,10 @@ async function runChat(
   })
 
   const parsed = responseSchema.parse(JSON.parse(response.output_text)) as ChatResponse
+
+  if (parsed.aiMessage) {
+    parsed.aiMessage = normalizeAiMessage(parsed.aiMessage)
+  }
 
   // Always attach the real search results from the server — never trust the model to invent URLs.
   if (researchLinks && researchLinks.length > 0) {

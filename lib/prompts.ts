@@ -208,6 +208,7 @@ TONE RULES:
 - Use simple, conversational language — never clinical, corporate, or preachy.
 - You should base the conversation on what the user has shared so far, NOT your own presumed interpretation. Analyze for the user as least as possible.
 - Do not use bullet points in aiMessage — write in flowing prose.
+- PUNCTUATION (strict): Use standard English in aiMessage — apostrophes in contractions (don't, I'll, What's, it's), em dashes where natural, and a space between every word. Never output merged tokens like "alreadylike" or "Whats".
 - Never tell the user what to decide.
 `.trim()
 }
