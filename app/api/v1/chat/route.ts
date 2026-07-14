@@ -4,10 +4,9 @@ import { z } from "zod"
 import { buildSystemPrompt } from "@/lib/prompts"
 import { normalizeAiMessage } from "@/lib/normalizeMessage"
 import {
-  buildSearchQuery,
+  evaluateSearchIntent,
   formatResearchForPrompt,
   gatherResearchLinks,
-  isExplicitSearchRequest,
 } from "@/lib/research"
 import type { ChatRequest, ChatResponse, ResearchLink } from "@/lib/types"
 
@@ -208,13 +207,12 @@ export async function POST(req: Request) {
     const body: ChatRequest = await req.json()
     const wantsStream = req.headers.get("accept")?.includes("application/x-ndjson")
 
-    const shouldSearch = isExplicitSearchRequest(body.message, body.history)
+    const searchIntent = await evaluateSearchIntent(client, body.message, body.history)
 
     if (!wantsStream) {
       let researchLinks: ResearchLink[] | null = null
-      if (shouldSearch) {
-        const query = buildSearchQuery(body.message, body.history)
-        researchLinks = await gatherResearchLinks(client, query)
+      if (searchIntent.shouldSearch && searchIntent.searchQuery) {
+        researchLinks = await gatherResearchLinks(client, searchIntent.searchQuery)
       }
       const parsed = await runChat(body, researchLinks)
       return Response.json(parsed)
@@ -226,10 +224,9 @@ export async function POST(req: Request) {
         const send = (obj: unknown) => controller.enqueue(encoder.encode(ndjsonLine(obj)))
         try {
           let researchLinks: ResearchLink[] | null = null
-          if (shouldSearch) {
+          if (searchIntent.shouldSearch && searchIntent.searchQuery) {
             send({ type: "status", status: "searching" })
-            const query = buildSearchQuery(body.message, body.history)
-            researchLinks = await gatherResearchLinks(client, query)
+            researchLinks = await gatherResearchLinks(client, searchIntent.searchQuery)
           }
           const parsed = await runChat(body, researchLinks)
           send({ type: "result", data: parsed })
