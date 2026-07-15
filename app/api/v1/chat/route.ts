@@ -8,6 +8,7 @@ import {
   formatResearchForPrompt,
   gatherResearchLinks,
 } from "@/lib/research"
+import { resolveSessionTitle } from "@/lib/sessionTitle"
 import type { ChatRequest, ChatResponse, ResearchLink } from "@/lib/types"
 
 const client = new OpenAI()
@@ -24,7 +25,7 @@ const responseSchema = z.object({
     .string()
     .nullable()
     .describe(
-      "Short conversation title (3–6 words). Always set on the first user message. Update later only if the dilemma becomes clearer and the user hasn't renamed it."
+      "Short conversation title (3–6 words) summarizing the user's dilemma — the choice or conflict they're torn about. Required on the first user message only; null on all later turns."
     ),
   nextStage: z
     .enum(["initial", "fog", "ledger", "clash", "review"])
@@ -190,6 +191,17 @@ async function runChat(
 
   if (parsed.aiMessage) {
     parsed.aiMessage = normalizeAiMessage(parsed.aiMessage)
+  }
+
+  const isFirstUserMessage = body.history.length === 0
+  if (isFirstUserMessage) {
+    parsed.sessionTitle = await resolveSessionTitle(
+      client,
+      body.message,
+      parsed.sessionTitle
+    )
+  } else {
+    parsed.sessionTitle = null
   }
 
   // Always attach the real search results from the server — never trust the model to invent URLs.
