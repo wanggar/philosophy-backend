@@ -167,6 +167,11 @@ STAGE TRANSITION INTROS (strict — once only):
   - ledger→clash: clashUpdates with ≥1 grounded clash (stay at clash; do not jump to review).
   - clash→review: no new artifact seed required (artifacts already exist).
 - Never invent scrap/ledger/clash content just to fill the panel — only from what the user has already said. If nothing usable exists yet, delay the transition one turn rather than fabricating.
+- ARTIFACT STAGE GATING (strict — client ignores out-of-stage updates):
+  - During initial and fog (except the fog→ledger transition turn): ledgerUpdates and ledgerPathLabels MUST be null. clashUpdates MUST be null.
+  - During ledger (except the ledger→clash transition turn): clashUpdates MUST be null.
+  - Never advance nextStage and seed a LATER artifact in the same response (e.g. do not set nextStage "ledger" and send clashUpdates).
+  - Routine in-stage updates (fogUpdates during fog, ledgerUpdates during ledger, clashUpdates during clash) are allowed only AFTER that artifact has been introduced.
 - Transitions: initial→fog, fog→ledger, ledger→clash, clash→review. Each happens exactly once per session.
 - On ALL other turns (every turn where nextStage is null or unchanged), NEVER mention the fog, ledger, clash, or Review panels. No reminders, no "tap whenever", no "I'll add to the panel."
 - Good (transition): acknowledge → question → "By the way, I'll keep those phrases in the fog so you can always reference them." (+ fogUpdates seeded)

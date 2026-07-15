@@ -104,7 +104,7 @@ const responseSchema = z.object({
     )
     .nullable()
     .describe(
-      "2–3 DISTINCT value clash scales. On ledger→clash transition, include ≥1 clash so the panel is not empty. Stay at clash — do not jump to review in that same response. Null outside clash stage."
+      "2–3 DISTINCT value clash scales. ONLY on ledger→clash transition (nextStage clash) or later clash turns. Null during initial, fog, and ledger (except ledger→clash transition). Include ≥1 clash on intro so the panel is not empty."
     ),
   ledgerUpdates: z
     .array(
@@ -135,7 +135,7 @@ const responseSchema = z.object({
     )
     .nullable()
     .describe(
-      "Ledger cell updates during ledger stage. On fog→ledger transition, include ≥1 grounded cell so the panel is not empty. Each entry REPLACES that cell. Send only cells that changed. Details must come from the user, never from search results alone."
+      "Ledger cell updates ONLY on fog→ledger transition (nextStage ledger) or later ledger turns. Null during initial and fog. On intro include ≥1 grounded cell so the panel is not empty."
     ),
   ledgerPathLabels: z
     .object({
@@ -143,7 +143,7 @@ const responseSchema = z.object({
       stay: z.string().describe("Specific label for path B from the user's dilemma, e.g. 'If you choose Cornell'."),
     })
     .nullable()
-    .describe("Labels for the two ledger paths. Required on every ledger turn — use the user's actual options, never generic go/stay."),
+    .describe("Path labels for the two ledger options. ONLY when nextStage is ledger or during ledger stage. Null during initial and fog."),
   researchLinks: z
     .array(
       z.object({
