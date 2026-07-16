@@ -7,6 +7,7 @@ import {
   evaluateSearchIntent,
   formatResearchForPrompt,
   gatherResearchLinks,
+  shouldExposeResearchLinks,
 } from "@/lib/research"
 import { resolveSessionTitle } from "@/lib/sessionTitle"
 import type { ChatRequest, ChatResponse, ResearchLink } from "@/lib/types"
@@ -206,8 +207,8 @@ async function runChat(
     parsed.sessionTitle = null
   }
 
-  // Always attach the real search results from the server — never trust the model to invent URLs.
-  if (researchLinks && researchLinks.length > 0) {
+  // Attach search results only when the reply delivers findings — not when asking for clarification.
+  if (shouldExposeResearchLinks(researchLinks, parsed.aiMessage)) {
     parsed.researchLinks = researchLinks
   } else {
     parsed.researchLinks = null
