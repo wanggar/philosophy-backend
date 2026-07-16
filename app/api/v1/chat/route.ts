@@ -71,7 +71,9 @@ const responseSchema = z.object({
             stake: z.string().describe("What's at stake between these two values for THIS user."),
             meaning: z
               .string()
-              .describe("What the user's current lean means — reference their situation, not generic philosophy."),
+              .describe(
+                "What the user's lean at userPosition means (0=fully left, 1=fully right). Interpret their verdict on the scale — reference their situation, not generic philosophy."
+              ),
             carryQuestion: z.string().describe("One question for the user to sit with, specific to their dilemma."),
             perspectives: z
               .array(

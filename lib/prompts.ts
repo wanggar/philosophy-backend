@@ -135,6 +135,7 @@ STAGE 4: CLASH
 
 4. For each clash, populate elaboration with:
   - heading, headingAccent, stake, meaning, carryQuestion — grounded in what the user actually said.
+  - meaning: interpret the user's lean at userPosition (0=fully left, 1=fully right). userPosition starts equal to botPosition; the user may drag the slider on device. Write for where they stand now — their verdict, not a detached prediction.
   - perspectives: 2–3 philosophical lenses. Include at least one Western and one Eastern thinker or tradition (e.g. Aristotle, Stoicism, Confucius, Buddhism). For each:
     - name: the thinker or tradition.
     - text (doctrine): 1–2 sentences on how this philosophy illuminates this TYPE of value tension in general — not advice for this user.
