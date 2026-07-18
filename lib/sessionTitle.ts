@@ -26,16 +26,31 @@ export function fallbackTitleFromMessage(message: string): string {
   return `${title.slice(0, 57).trim()}…`
 }
 
+function languageInstruction(preferredLanguage: string): string {
+  switch (preferredLanguage) {
+    case "zh-Hans":
+    case "zh":
+      return "Write the title in Simplified Chinese."
+    case "es":
+      return "Write the title in Spanish."
+    case "fr":
+      return "Write the title in French."
+    default:
+      return "Write the title in English."
+  }
+}
+
 export async function generateSessionTitle(
   client: OpenAI,
-  message: string
+  message: string,
+  preferredLanguage: string = "en"
 ): Promise<string> {
   const response = await client.responses.create({
     model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
     input: [
       {
         role: "system",
-        content: `You name decision-making conversations. Given the user's first message, write a short title (3–6 words) that summarizes their dilemma — the choice, conflict, or situation they're torn about. Use plain English. No quotes, punctuation at the end, file paths, URLs, or placeholders.`,
+        content: `You name decision-making conversations. Given the user's first message, write a short title (3–6 words) that summarizes their dilemma — the choice, conflict, or situation they're torn about. ${languageInstruction(preferredLanguage)} No quotes, punctuation at the end, file paths, URLs, or placeholders.`,
       },
       { role: "user", content: message },
     ],
@@ -48,14 +63,15 @@ export async function generateSessionTitle(
 export async function resolveSessionTitle(
   client: OpenAI,
   message: string,
-  modelTitle: string | null | undefined
+  modelTitle: string | null | undefined,
+  preferredLanguage: string = "en"
 ): Promise<string> {
   if (isValidSessionTitle(modelTitle)) {
     return modelTitle!.trim()
   }
 
   try {
-    const generated = await generateSessionTitle(client, message)
+    const generated = await generateSessionTitle(client, message, preferredLanguage)
     if (isValidSessionTitle(generated)) {
       return generated.trim()
     }

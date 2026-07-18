@@ -70,15 +70,22 @@ function applyRegexFixes(text: string, fixes: [RegExp, string][]): string {
 }
 
 /** Normalize LLM prose: apostrophes, contractions, and common missing spaces. */
-export function normalizeAiMessage(text: string): string {
+export function normalizeAiMessage(
+  text: string,
+  preferredLanguage: string = "en"
+): string {
   let result = text
   for (const variant of APOSTROPHE_VARIANTS) {
     result = result.replaceAll(variant, "'")
   }
 
-  result = applyRegexFixes(result, MERGED_WORD_FIXES)
-  result = applyRegexFixes(result, CONTRACTION_FIXES)
-  result = result.replace(ILL_CONTRACTION, "I'll")
+  // English-oriented contraction / merge fixes — skip for other languages.
+  const isEnglish = preferredLanguage === "en" || preferredLanguage.startsWith("en-")
+  if (isEnglish) {
+    result = applyRegexFixes(result, MERGED_WORD_FIXES)
+    result = applyRegexFixes(result, CONTRACTION_FIXES)
+    result = result.replace(ILL_CONTRACTION, "I'll")
+  }
 
-  return result
+  return result.replace(/[ \t]+\n/g, "\n").trim()
 }

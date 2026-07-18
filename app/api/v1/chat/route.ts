@@ -4,6 +4,10 @@ import { z } from "zod"
 import { buildSystemPrompt } from "@/lib/prompts"
 import { normalizeAiMessage } from "@/lib/normalizeMessage"
 import {
+  samplePhilosopherCandidates,
+  usedPerspectiveNamesFromArtifacts,
+} from "@/lib/philosopherPool"
+import {
   evaluateSearchIntent,
   formatResearchForPrompt,
   gatherResearchLinks,
@@ -20,7 +24,7 @@ const responseSchema = z.object({
   aiMessage: z
     .string()
     .describe(
-      "The AI companion's reply. Warm, direct, max 4 sentences. Use standard English punctuation and spacing (don't, I'll, What's — never dont/Ill/Whats or merged words like alreadylike). Usually ends with a question. If nextStage is set: acknowledge the user first, ask a deepening question (or soft close on review), THEN end with one soft aside about the new tool — never lead with the tool. When researchLinks are present, do not paste URLs; ask what resonates."
+      "The AI companion's reply. Warm, direct, max 4 sentences. Write natively in the user's preferredLanguage. Use natural punctuation for that language (for English: don't, I'll, What's — never dont/Ill/Whats or merged words). Usually ends with a question. If nextStage is set (except review): acknowledge + deepening question only — no soft aside about tools/panels/chips. On clash→review: acknowledge + soft close + Review orienting line. When researchLinks are present, do not paste URLs; ask what resonates."
     ),
   sessionTitle: z
     .string()
@@ -32,7 +36,7 @@ const responseSchema = z.object({
     .enum(["initial", "fog", "ledger", "clash", "review"])
     .nullable()
     .describe(
-      "Advance to this stage, or null to stay. When set, aiMessage must acknowledge + question first, then a soft tool aside last — not tool-first."
+      "Advance to this stage, or null to stay. When set (except review): aiMessage is acknowledge + question only — no tool soft aside. On review: acknowledge + soft close + Review line."
     ),
   fogUpdates: z
     .array(
@@ -47,7 +51,7 @@ const responseSchema = z.object({
     )
     .nullable()
     .describe(
-      "New fog scraps to add. During fog stage and on initial→fog transition, populate with ≥1 verbatim scrap when introducing the fog. Null otherwise."
+      "New verbatim scraps for Your words. During fog stage and on initial→fog transition, populate with ≥1 scrap when unlocking. Null otherwise."
     ),
   clashUpdates: z
     .array(
@@ -82,7 +86,7 @@ const responseSchema = z.object({
                   name: z
                     .string()
                     .describe(
-                      "Philosopher or tradition name e.g. 'Aristotle', 'Confucius', 'Stoicism', 'Buddhism'."
+                      "Named thinker preferred (exact name from this turn's candidate pool when possible). Avoid bare -isms when a person fits."
                     ),
                   text: z
                     .string()
@@ -92,14 +96,14 @@ const responseSchema = z.object({
                   application: z
                     .string()
                     .describe(
-                      "1–2 sentences: what this thinker/tradition would notice or ask about THIS user's situation. Reference their dilemma. Illuminate, never tell them what to choose."
+                      "1–2 sentences: what this thinker would notice or ask about THIS user's situation. Reference their dilemma. Illuminate, never tell them what to choose."
                     ),
                 })
               )
               .min(2)
               .max(3)
               .describe(
-                "2–3 philosophical lenses. Include at least one Western and one Eastern thinker or tradition."
+                "2–3 lenses from this turn's candidate pool. Diversify traditions (Western, Eastern, Middle Eastern & Islamic, African & indigenous) and periods (ancient through contemporary). No name reuse within the session or across clashes in this response. Match lenses to tension type (duty, authenticity, utility, care, justice, etc.)."
               ),
           })
           .nullable()
@@ -178,10 +182,19 @@ async function runChat(
         ? `\n\nLIVE RESEARCH RESULTS: none found. Be honest; do not invent URLs.`
         : ""
 
+  const usedNames = usedPerspectiveNamesFromArtifacts(body.artifacts.clashScales)
+  const philosopherCandidates = samplePhilosopherCandidates({
+    excludeNames: usedNames,
+    count: 12,
+  })
+
   const response = await client.responses.create({
     model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
     input: [
-      { role: "system", content: buildSystemPrompt(body) + researchBlock },
+      {
+        role: "system",
+        content: buildSystemPrompt(body, philosopherCandidates) + researchBlock,
+      },
       ...body.history,
       { role: "user", content: body.message },
     ],
@@ -193,7 +206,10 @@ async function runChat(
   const parsed = responseSchema.parse(JSON.parse(response.output_text)) as ChatResponse
 
   if (parsed.aiMessage) {
-    parsed.aiMessage = normalizeAiMessage(parsed.aiMessage)
+    parsed.aiMessage = normalizeAiMessage(
+      parsed.aiMessage,
+      body.preferredLanguage ?? "en"
+    )
   }
 
   const isFirstUserMessage = body.history.length === 0
@@ -201,7 +217,8 @@ async function runChat(
     parsed.sessionTitle = await resolveSessionTitle(
       client,
       body.message,
-      parsed.sessionTitle
+      parsed.sessionTitle,
+      body.preferredLanguage ?? "en"
     )
   } else {
     parsed.sessionTitle = null

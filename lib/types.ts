@@ -31,6 +31,8 @@ export type ClashScale = {
   botPosition: number
   userPosition: number
   elaboration?: ClashElaboration | null
+  /** Request-only: names already shown for this clash (for diversity / no-reuse). */
+  perspectiveNames?: string[]
 }
 
 export type LedgerPath = "go" | "stay"
@@ -73,6 +75,8 @@ export type ChatRequest = {
   stage: Stage
   history: ChatHistoryMessage[]
   artifacts: Artifacts
+  /** BCP-47-ish code from the app: en | zh-Hans | es | fr */
+  preferredLanguage?: string
 }
 
 export type ResearchLink = {
