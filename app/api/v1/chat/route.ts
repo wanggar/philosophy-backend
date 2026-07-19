@@ -44,14 +44,20 @@ const responseSchema = z.object({
         text: z
           .string()
           .max(36)
-          .describe("Unique emotionally honest phrase, 2–5 words, max 36 characters. Never duplicate existing scraps."),
+          .describe(
+            "Verbatim emotionally honest phrase, 2–5 words, max 36 characters. Re-emit an existing scrap when the user repeats it (client grows size)."
+          ),
         isItalic: z.boolean().describe("True for reflective/internal phrases, false for factual ones."),
-        size: z.number().min(12).max(28).describe("Visual weight: 12=quiet, 28=loud."),
+        size: z
+          .number()
+          .min(12)
+          .max(28)
+          .describe("Optional visual-weight hint (12=quiet, 28=loud); client may override from repetition."),
       })
     )
     .nullable()
     .describe(
-      "New verbatim scraps for Your words. During fog stage and on initial→fog transition, populate with ≥1 scrap when unlocking. Null otherwise."
+      "Verbatim scraps for Your words. Required (≥1) on initial→fog unlock. After unlock, populate on fog/ledger/clash turns with new OR repeated phrases. Null on review or when nothing quotable."
     ),
   clashUpdates: z
     .array(
