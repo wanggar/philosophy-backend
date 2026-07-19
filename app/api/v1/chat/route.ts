@@ -116,9 +116,10 @@ const responseSchema = z.object({
           .describe("Elaboration content for the clash detail view. Populate when emitting clashUpdates."),
       })
     )
+    .max(3)
     .nullable()
     .describe(
-      "2–3 DISTINCT value clash scales. ONLY on ledger→clash transition (nextStage clash) or later clash turns. Null during initial, fog, and ledger (except ledger→clash transition). Include ≥1 clash on intro so the panel is not empty."
+      "Value tension scales. On ledger→clash (nextStage=clash): REQUIRED 2 or 3 DISTINCT axes (never 1; prefer 3). On later clash turns: null, or 1–2 NEW tensions for a second wave (different axis; session max 3). Null during initial/fog/ledger except the ledger→clash transition."
     ),
   ledgerUpdates: z
     .array(
@@ -137,7 +138,7 @@ const responseSchema = z.object({
                 .array(z.string().max(40))
                 .max(5)
                 .describe(
-                  "Concrete supporting evidence from USER input only, e.g. ['better classics', 'more courses']. Never copy web-search claims into details. Use [] if no concrete supports yet."
+                  "Concrete supporting evidence from USER input only, e.g. ['better classics', 'more courses']. Prefer 1–3 details when the user gave specifics. Never copy web-search claims. Use [] if no concrete supports yet."
                 ),
             })
           )
@@ -149,7 +150,7 @@ const responseSchema = z.object({
     )
     .nullable()
     .describe(
-      "Ledger cell updates ONLY on fog→ledger transition (nextStage ledger) or later ledger turns. Null during initial and fog. On intro include ≥1 grounded cell so the panel is not empty."
+      "Tradeoffs cell updates on fog→ledger, during ledger, and lightly during clash when new gains/losses appear. Null during initial/fog (except fog→ledger). Prefer filling empty gain/lose cells and mirror pairs across paths. Must update when the latest user message adds tradeoff detail."
     ),
   ledgerPathLabels: z
     .object({
