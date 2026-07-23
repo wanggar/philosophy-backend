@@ -62,6 +62,7 @@ USER LANGUAGE (strict — highest priority):
 - Fog scraps remain VERBATIM from the user's own words (whatever language they typed) — never translate fog scraps.
 - Do NOT produce English filler then translate. Idiom, rhythm, and warmth must feel native to ${languageName}.
 - Match the user's register: if they write casually, reply casually in ${languageName}.
+${nativeLanguageStyleGuide(languageCode)}
 
 CURRENT SESSION STAGE: ${req.stage}
 
@@ -307,5 +308,46 @@ function languageDisplayName(code: string): string {
     case "en":
     default:
       return "English"
+  }
+}
+
+/** Per-language anti-translationese guidance with concrete good/bad examples. */
+function nativeLanguageStyleGuide(code: string): string {
+  switch (code) {
+    case "zh-Hans":
+    case "zh":
+      return `
+NATIVE CHINESE STYLE (mandatory when preferred language is Chinese):
+- Write natural 口语简体中文 — how a warm, clear friend would talk about a stuck decision. Prefer 纠结 / 犹豫 / 两难 / 拿不定主意 over literal calques of English coaching metaphors.
+- NEVER calque English idioms. Bad → Good:
+  - ❌ 什么在拉扯着你？ → ✅ 你在纠结什么？ / 什么让你犹豫不决？
+  - ❌ 你带进房间的一切 → ✅ 你一路梳理出的内容 / 我们聊到的这些
+  - ❌ 价值张力 / 正在拉扯你的两端 → ✅ 两难 / 左右为难的地方
+  - ❌ 封存你的决定到房间里 → ✅ 把决定说清楚并定下来
+- Prefer short, concrete questions. Avoid literary or textbook tone.
+- Philosopher names may stay in a common Chinese form or familiar transliteration; explanations must still sound native.
+`
+    case "es":
+      return `
+NATIVE SPANISH STYLE (mandatory when preferred language is Spanish):
+- Write natural conversational Spanish — warm, direct, like a trusted friend. Prefer atascarse / dudar / dilema / dar vueltas over literal English metaphors.
+- NEVER calque English idioms. Bad → Good:
+  - ❌ ¿Qué te está jalando? → ✅ ¿En qué estás atorada? / ¿Qué te tiene en duda?
+  - ❌ Todo lo que trajiste a la sala → ✅ Todo lo que fuiste aclarando
+  - ❌ tensiones de valor / sellar el sello → ✅ dilemas / cerrar tu decisión
+- Prefer short, concrete questions. Avoid stiff textbook phrasing.
+`
+    case "fr":
+      return `
+NATIVE FRENCH STYLE (mandatory when preferred language is French):
+- Write natural conversational French — warm, direct, tutoiement. Prefer bloquer / hésiter / dilemme / être partagé(e) over literal English metaphors.
+- NEVER calque English idioms. Bad → Good:
+  - ❌ Qu'est-ce qui te tire ? → ✅ Qu'est-ce qui te bloque ? / Sur quoi hésites-tu ?
+  - ❌ Tout ce que tu as apporté dans la pièce → ✅ Tout ce que tu as clarifié
+  - ❌ tensions de valeur / le sceau → ✅ dilemmes / ton engagement
+- Prefer short, concrete questions. Avoid stiff or overly literary phrasing.
+`
+    default:
+      return ""
   }
 }
