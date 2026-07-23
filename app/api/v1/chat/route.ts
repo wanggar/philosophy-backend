@@ -139,7 +139,7 @@ const responseSchema = z.object({
                 .array(z.string().max(40))
                 .max(5)
                 .describe(
-                  "Concrete supporting evidence from USER input only, e.g. ['better classics', 'more courses']. Prefer 1–3 details when the user gave specifics. Never copy web-search claims. Use [] if no concrete supports yet."
+                  "Concrete supporting evidence grounded in USER input (or clear logical implication of it), e.g. ['better classics', 'more courses']. Prefer 1–3 details when the user gave specifics. Never invent baseless facts or copy web-search claims. Use [] if no concrete supports yet."
                 ),
             })
           )
@@ -151,7 +151,7 @@ const responseSchema = z.object({
     )
     .nullable()
     .describe(
-      "Tradeoffs cell updates on fog→ledger, during ledger, and lightly during clash when new gains/losses appear. Null during initial/fog (except fog→ledger). Prefer filling empty gain/lose cells and mirror pairs across paths. Must update when the latest user message adds tradeoff detail."
+      "Tradeoffs cell updates on fog→ledger, during ledger, and lightly during clash when new gains/losses appear. Null during initial/fog (except fog→ledger). Prefer filling empty gain/lose cells, including long-horizon rows via grounded deduction from user input, and mirror pairs across paths. Must update when the latest user message adds tradeoff detail."
     ),
   ledgerPathLabels: z
     .object({
