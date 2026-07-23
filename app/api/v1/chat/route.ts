@@ -24,7 +24,7 @@ const responseSchema = z.object({
   aiMessage: z
     .string()
     .describe(
-      "The AI companion's reply. Warm, direct, max 4 sentences. Write natively in the user's preferredLanguage. Use natural punctuation for that language (for English: don't, I'll, What's — never dont/Ill/Whats or merged words). Usually ends with a question. If nextStage is set (except review): acknowledge + deepening question only — no soft aside about tools/panels/chips. On clash→review: acknowledge + soft close + Review orienting line. When researchLinks are present, do not paste URLs; ask what resonates."
+      "The AI companion's reply. Warm, direct, max 4 sentences. Write natively in the user's preferredLanguage. Use natural punctuation for that language (for English: don't, I'll, What's — never dont/Ill/Whats or merged words). Usually ends with an uptake+depth question (pick up their words; ask why / what it might mean) — avoid defaulting to A-or-B rankings. If nextStage is set (except review): acknowledge + deepening question only — no soft aside about tools/panels/chips. On clash→review: acknowledge + soft close + Review orienting line. When researchLinks are present, do not paste URLs; ask what resonates."
     ),
   sessionTitle: z
     .string()
