@@ -22,7 +22,7 @@ export function userIndicatesDecisionReadiness(message: string): boolean {
 /**
  * Enforce product rules the model sometimes ignores:
  * - review only when the user signals readiness
- * - first tension unlock seeds exactly one clash
+ * - first tension unlock seeds exactly two clashes
  * - later clash turns add at most one new tension per turn
  */
 export function enforceStageArtifactGuards(
@@ -51,8 +51,8 @@ export function enforceStageArtifactGuards(
   const clashes = out.clashUpdates
   if (clashes && clashes.length > 0) {
     if (out.nextStage === "clash" && body.stage === "ledger") {
-      // First unlock: exactly one tension.
-      out.clashUpdates = [clashes[0]]
+      // First unlock: exactly two tensions.
+      out.clashUpdates = clashes.slice(0, 2)
     } else if (body.stage === "clash" && out.nextStage !== "review") {
       const existingIds = new Set(body.artifacts.clashScales.map((c) => c.id))
       const existingKeys = new Set(

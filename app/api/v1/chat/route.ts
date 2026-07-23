@@ -120,7 +120,7 @@ const responseSchema = z.object({
     .max(3)
     .nullable()
     .describe(
-      "Value tension scales. On ledger→clash (nextStage=clash): REQUIRED exactly 1 tension (the clearest axis so far). On later clash turns: re-emit UPDATED existing tension(s) when understanding deepened, and/or add at most 1 NEW tension if a distinct new thread emerged (session max 3). Null during initial/fog/ledger except the ledger→clash transition."
+      "Value tension scales. On ledger→clash (nextStage=clash): REQUIRED exactly 2 DISTINCT tensions (the two clearest axes so far). On later clash turns: re-emit UPDATED existing tension(s) when understanding deepened, and/or add at most 1 NEW tension if a distinct new thread emerged (session max 3). Null during initial/fog/ledger except the ledger→clash transition."
     ),
   ledgerUpdates: z
     .array(
