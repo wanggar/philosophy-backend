@@ -14,6 +14,7 @@ import {
   shouldExposeResearchLinks,
 } from "@/lib/research"
 import { resolveSessionTitle } from "@/lib/sessionTitle"
+import { enforceStageArtifactGuards } from "@/lib/stageGuards"
 import type { ChatRequest, ChatResponse, ResearchLink } from "@/lib/types"
 
 const client = new OpenAI()
@@ -36,7 +37,7 @@ const responseSchema = z.object({
     .enum(["initial", "fog", "ledger", "clash", "review"])
     .nullable()
     .describe(
-      "Advance to this stage, or null to stay. When set (except review): aiMessage is acknowledge + question only — no tool soft aside. On review: acknowledge + soft close + Review line."
+      "Advance to this stage, or null to stay. When set (except review): aiMessage is acknowledge + question only — no tool soft aside. Set nextStage to review ONLY when the user explicitly indicates readiness/comfort to decide (not merely because tensions exist). On review: acknowledge + soft close + Review line."
     ),
   fogUpdates: z
     .array(
@@ -119,7 +120,7 @@ const responseSchema = z.object({
     .max(3)
     .nullable()
     .describe(
-      "Value tension scales. On ledger→clash (nextStage=clash): REQUIRED 2 or 3 DISTINCT axes (never 1; prefer 3). On later clash turns: null, or 1–2 NEW tensions for a second wave (different axis; session max 3). Null during initial/fog/ledger except the ledger→clash transition."
+      "Value tension scales. On ledger→clash (nextStage=clash): REQUIRED exactly 1 tension (the clearest axis so far). On later clash turns: re-emit UPDATED existing tension(s) when understanding deepened, and/or add at most 1 NEW tension if a distinct new thread emerged (session max 3). Null during initial/fog/ledger except the ledger→clash transition."
     ),
   ledgerUpdates: z
     .array(
@@ -238,7 +239,7 @@ async function runChat(
     parsed.researchLinks = null
   }
 
-  return parsed
+  return enforceStageArtifactGuards(body, parsed)
 }
 
 export async function POST(req: Request) {
